@@ -17,10 +17,16 @@ def initialize_database():
             title TEXT NOT NULL,
             category TEXT DEFAULT 'General',
             due_date TEXT,
+            due_time TEXT,
             status TEXT DEFAULT 'Pending',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+
+    cursor.execute("PRAGMA table_info(tasks)")
+    columns = {row[1] for row in cursor.fetchall()}
+    if "due_time" not in columns:
+        cursor.execute("ALTER TABLE tasks ADD COLUMN due_time TEXT")
 
     conn.commit()
     conn.close()
