@@ -1,20 +1,18 @@
-from datetime import date
+from datetime import datetime
 
 from database import get_connection
 
 
-def add_task(title, category="General", due_date=None):
+def add_task(title, category="General", due_date=None, due_time=None):
     conn = get_connection()
     cursor = conn.cursor()
-
     cursor.execute(
         """
-        INSERT INTO tasks (title, category, due_date)
-        VALUES (?, ?, ?)
+        INSERT INTO tasks (title, category, due_date, due_time)
+        VALUES (?, ?, ?, ?)
         """,
-        (title, category, due_date),
+        (title, category, due_date, due_time),
     )
-
     conn.commit()
     task_id = cursor.lastrowid
     conn.close()
@@ -24,36 +22,38 @@ def add_task(title, category="General", due_date=None):
 def view_tasks(status=None):
     conn = get_connection()
     cursor = conn.cursor()
-
+    query = "SELECT id, title, category, due_date, due_time, status FROM tasks"
+    params = ()
     if status:
-        cursor.execute(
-            "SELECT id, title, category, due_date, status FROM tasks WHERE status = ? ORDER BY due_date IS NULL, due_date, id",
-            (status,),
-        )
-    else:
-        cursor.execute(
-            "SELECT id, title, category, due_date, status FROM tasks ORDER BY due_date IS NULL, due_date, id"
-        )
-
+        query += " WHERE status = ?"
+        params = (status,)
+    query += " ORDER BY due_date IS NULL, due_date, due_time IS NULL, due_time, id"
+    cursor.execute(query, params)
     tasks = cursor.fetchall()
     conn.close()
     return tasks
 
 
-def get_due_tasks():
-    today = date.today().isoformat()
+def get_due_tasks(now=None):
+    now = now or datetime.now()
+    current_date = now.date().isoformat()
+    current_time = now.strftime("%H:%M")
+
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
         """
-        SELECT id, title, due_date
+        SELECT id, title, due_date, due_time
         FROM tasks
         WHERE status = 'Pending'
           AND due_date IS NOT NULL
-          AND due_date <= ?
-        ORDER BY due_date, id
+          AND (
+              due_date < ?
+              OR (due_date = ? AND (due_time IS NULL OR due_time <= ?))
+          )
+        ORDER BY due_date, due_time IS NULL, due_time, id
         """,
-        (today,),
+        (current_date, current_date, current_time),
     )
     tasks = cursor.fetchall()
     conn.close()
