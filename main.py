@@ -8,52 +8,73 @@ from tasks import add_task, complete_task, get_due_tasks, view_tasks
 def parse_due_date(command):
     match = re.search(r"\s+due\s+(.+)$", command, re.IGNORECASE)
     if not match:
-        return command.strip(), None
+        return command.strip(), None, None
 
     title = command[:match.start()].strip()
-    date_text = match.group(1).strip().lower()
+    due_text = match.group(1).strip()
+    time_match = re.search(r"\s+at\s+(.+)$", due_text, re.IGNORECASE)
+    time_text = None
+    if time_match:
+        due_text = due_text[:time_match.start()].strip()
+        time_text = time_match.group(1).strip().lower()
+
+    date_text = due_text.lower()
     today = date.today()
+    relative_dates = {"today": today, "tomorrow": today + timedelta(days=1)}
 
-    relative_dates = {
-        "today": today,
-        "tomorrow": today + timedelta(days=1),
-    }
+    due_date = None
     if date_text in relative_dates:
-        return title, relative_dates[date_text].isoformat()
+        due_date = relative_dates[date_text]
+    else:
+        weekday_names = {
+            "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
+            "friday": 4, "saturday": 5, "sunday": 6,
+        }
+        weekday_match = re.fullmatch(r"(next\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)", date_text)
+        if weekday_match:
+            is_next = bool(weekday_match.group(1))
+            target = weekday_names[weekday_match.group(2)]
+            days_ahead = (target - today.weekday()) % 7
+            if is_next:
+                days_ahead = days_ahead + 7 if days_ahead else 7
+            elif days_ahead == 0:
+                days_ahead = 7
+            due_date = today + timedelta(days=days_ahead)
+        else:
+            for fmt in ("%Y-%m-%d", "%d %b %Y", "%d %B %Y"):
+                try:
+                    due_date = datetime.strptime(date_text, fmt).date()
+                    break
+                except ValueError:
+                    pass
 
-    weekday_names = {
-        "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
-        "friday": 4, "saturday": 5, "sunday": 6,
-    }
-    weekday_match = re.fullmatch(r"(next\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)", date_text)
-    if weekday_match:
-        is_next = bool(weekday_match.group(1))
-        target = weekday_names[weekday_match.group(2)]
-        days_ahead = (target - today.weekday()) % 7
-        if is_next:
-            days_ahead = days_ahead + 7 if days_ahead else 7
-        elif days_ahead == 0:
-            days_ahead = 7
-        return title, (today + timedelta(days=days_ahead)).isoformat()
+    if due_date is None:
+        return title, "INVALID", None
 
-    formats = ["%Y-%m-%d", "%d %b %Y", "%d %B %Y"]
-    for fmt in formats:
-        try:
-            return title, datetime.strptime(date_text, fmt).date().isoformat()
-        except ValueError:
-            pass
+    due_time = None
+    if time_text:
+        normalized = re.sub(r"\s+", " ", time_text)
+        for fmt in ("%I %p", "%I:%M %p", "%H:%M"):
+            try:
+                due_time = datetime.strptime(normalized.upper(), fmt).strftime("%H:%M")
+                break
+            except ValueError:
+                pass
+        if due_time is None:
+            return title, due_date.isoformat(), "INVALID"
 
-    return title, "INVALID"
+    return title, due_date.isoformat(), due_time
 
 
 def print_tasks(tasks):
     if not tasks:
         print("\nJARVIS: No tasks found.\n")
         return
-
     print()
-    for task_id, title, category, due_date, status in tasks:
+    for task_id, title, category, due_date, due_time, status in tasks:
         due = due_date if due_date else "No deadline"
+        if due_time:
+            due += f" at {due_time}"
         print(f"[{task_id}] {title} | {category} | Due: {due} | {status}")
     print()
 
@@ -61,40 +82,39 @@ def print_tasks(tasks):
 def show_due_alerts():
     tasks = get_due_tasks()
     if not tasks:
-        print("\nJARVIS: No tasks are due today or overdue.\n")
+        print("\nJARVIS: No tasks are due right now.\n")
         return
-
-    today = date.today().isoformat()
+    now = datetime.now()
+    today = now.date().isoformat()
     print("\n! JARVIS REMINDERS")
-    for task_id, title, due_date in tasks:
-        if due_date < today:
-            print(f"  [{task_id}] OVERDUE: {title} (was due {due_date})")
+    for task_id, title, due_date, due_time in tasks:
+        when = f"{due_date} {due_time}" if due_time else due_date
+        if due_date < today or (due_date == today and due_time and due_time < now.strftime("%H:%M")):
+            print(f"  [{task_id}] OVERDUE: {title} (due {when})")
         else:
-            print(f"  [{task_id}] DUE TODAY: {title}")
+            print(f"  [{task_id}] DUE NOW: {title} ({when})")
     print()
 
 
 def show_help():
     print("""
 Available commands:
-  add <task>                       Add a task without a deadline
-  add <task> due 2026-08-24        Add a task with an exact deadline
-  add <task> due tomorrow          Add a task due tomorrow
-  add <task> due next monday       Add a task due next Monday
-  tasks                            Show all tasks
-  pending                          Show pending tasks
-  reminders                        Show due and overdue tasks
-  complete <id>                    Mark a task as completed
-  help                             Show available commands
-  exit                             Close JARVIS
+  add <task> due tomorrow
+  add <task> due next monday at 6 pm
+  add <task> due 2026-08-24 at 18:00
+  tasks
+  pending
+  reminders
+  complete <id>
+  help
+  exit
 """)
 
 
 def run_jarvis():
     initialize_database()
-
     print("\n================================")
-    print("        JARVIS STUDENT v0.3")
+    print("        JARVIS STUDENT v0.4")
     print("================================")
     show_due_alerts()
     print("Type 'help' to see commands.\n")
@@ -103,7 +123,6 @@ def run_jarvis():
         command = input("JARVIS > ").strip()
         if not command:
             continue
-
         parts = command.split(maxsplit=1)
         action = parts[0].lower()
 
@@ -111,19 +130,22 @@ def run_jarvis():
             if len(parts) < 2:
                 print("JARVIS: Please provide a task title.")
                 continue
-            title, due_date = parse_due_date(parts[1])
+            title, due_date, due_time = parse_due_date(parts[1])
             if due_date == "INVALID":
-                print("JARVIS: I could not understand the date. Try tomorrow, next monday, 2026-08-24, or 24 Aug 2026.")
+                print("JARVIS: I could not understand the date.")
+                continue
+            if due_time == "INVALID":
+                print("JARVIS: I could not understand the time. Try 6 pm, 6:30 pm, or 18:30.")
                 continue
             if not title:
                 print("JARVIS: Please provide a task title.")
                 continue
-            task_id = add_task(title, due_date=due_date)
+            task_id = add_task(title, due_date=due_date, due_time=due_time)
             if due_date:
-                print(f"JARVIS: Task #{task_id} added. Due: {due_date}.")
+                when = due_date + (f" at {due_time}" if due_time else "")
+                print(f"JARVIS: Task #{task_id} added. Due: {when}.")
             else:
                 print(f"JARVIS: Task #{task_id} added successfully.")
-
         elif action == "tasks":
             print_tasks(view_tasks())
         elif action == "pending":
