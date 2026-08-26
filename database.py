@@ -28,6 +28,18 @@ def initialize_database():
     if "due_time" not in columns:
         cursor.execute("ALTER TABLE tasks ADD COLUMN due_time TEXT")
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS assignments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            subject TEXT DEFAULT 'General',
+            due_date TEXT,
+            due_time TEXT,
+            status TEXT DEFAULT 'Pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
     conn.commit()
     conn.close()
 
