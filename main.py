@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta
 import re
 
+from assignments import add_assignment, complete_assignment, view_assignments
 from database import initialize_database
 from tasks import add_task, complete_task, get_due_tasks, view_tasks
 
@@ -21,8 +22,8 @@ def parse_due_date(command):
     date_text = due_text.lower()
     today = date.today()
     relative_dates = {"today": today, "tomorrow": today + timedelta(days=1)}
-
     due_date = None
+
     if date_text in relative_dates:
         due_date = relative_dates[date_text]
     else:
@@ -66,6 +67,18 @@ def parse_due_date(command):
     return title, due_date.isoformat(), due_time
 
 
+def parse_assignment(command):
+    title, due_date, due_time = parse_due_date(command)
+    if due_date == "INVALID" or due_time == "INVALID":
+        return title, "General", due_date, due_time
+    subject = "General"
+    subject_match = re.search(r"\s+for\s+(.+)$", title, re.IGNORECASE)
+    if subject_match:
+        subject = subject_match.group(1).strip()
+        title = title[:subject_match.start()].strip()
+    return title, subject, due_date, due_time
+
+
 def print_tasks(tasks):
     if not tasks:
         print("\nJARVIS: No tasks found.\n")
@@ -76,6 +89,19 @@ def print_tasks(tasks):
         if due_time:
             due += f" at {due_time}"
         print(f"[{task_id}] {title} | {category} | Due: {due} | {status}")
+    print()
+
+
+def print_assignments(assignments):
+    if not assignments:
+        print("\nJARVIS: No assignments found.\n")
+        return
+    print()
+    for assignment_id, title, subject, due_date, due_time, status in assignments:
+        due = due_date if due_date else "No deadline"
+        if due_time:
+            due += f" at {due_time}"
+        print(f"[{assignment_id}] {title} | Subject: {subject} | Due: {due} | {status}")
     print()
 
 
@@ -101,7 +127,10 @@ def show_help():
 Available commands:
   add <task> due tomorrow
   add <task> due next monday at 6 pm
-  add <task> due 2026-08-24 at 18:00
+  assignment <title> for <subject> due next monday at 6 pm
+  assignments
+  pendingassignments
+  completeassignment <id>
   tasks
   pending
   reminders
@@ -114,7 +143,7 @@ Available commands:
 def run_jarvis():
     initialize_database()
     print("\n================================")
-    print("        JARVIS STUDENT v0.4")
+    print("        JARVIS STUDENT v0.6")
     print("================================")
     show_due_alerts()
     print("Type 'help' to see commands.\n")
@@ -137,19 +166,34 @@ def run_jarvis():
             if due_time == "INVALID":
                 print("JARVIS: I could not understand the time. Try 6 pm, 6:30 pm, or 18:30.")
                 continue
-            if not title:
-                print("JARVIS: Please provide a task title.")
-                continue
             task_id = add_task(title, due_date=due_date, due_time=due_time)
-            if due_date:
-                when = due_date + (f" at {due_time}" if due_time else "")
-                print(f"JARVIS: Task #{task_id} added. Due: {when}.")
-            else:
-                print(f"JARVIS: Task #{task_id} added successfully.")
+            print(f"JARVIS: Task #{task_id} added successfully.")
+
+        elif action == "assignment":
+            if len(parts) < 2:
+                print("JARVIS: Use assignment <title> for <subject> due <date> at <time>.")
+                continue
+            title, subject, due_date, due_time = parse_assignment(parts[1])
+            if due_date == "INVALID":
+                print("JARVIS: I could not understand the assignment date.")
+                continue
+            if due_time == "INVALID":
+                print("JARVIS: I could not understand the assignment time.")
+                continue
+            if not title:
+                print("JARVIS: Please provide an assignment title.")
+                continue
+            assignment_id = add_assignment(title, subject, due_date, due_time)
+            print(f"JARVIS: Assignment #{assignment_id} added successfully.")
+
         elif action == "tasks":
             print_tasks(view_tasks())
         elif action == "pending":
             print_tasks(view_tasks("Pending"))
+        elif action == "assignments":
+            print_assignments(view_assignments())
+        elif action == "pendingassignments":
+            print_assignments(view_assignments("Pending"))
         elif action == "reminders":
             show_due_alerts()
         elif action == "complete":
@@ -160,6 +204,14 @@ def run_jarvis():
                 print(f"JARVIS: Task #{parts[1]} completed successfully.")
             else:
                 print("JARVIS: Task not found or already completed.")
+        elif action == "completeassignment":
+            if len(parts) < 2 or not parts[1].isdigit():
+                print("JARVIS: Use completeassignment <assignment_id>")
+                continue
+            if complete_assignment(int(parts[1])):
+                print(f"JARVIS: Assignment #{parts[1]} completed successfully.")
+            else:
+                print("JARVIS: Assignment not found or already completed.")
         elif action == "help":
             show_help()
         elif action in {"exit", "quit"}:
