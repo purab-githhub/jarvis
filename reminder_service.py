@@ -6,6 +6,7 @@ try:
 except ImportError:
     notification = None
 
+from assignments import get_due_assignments
 from database import initialize_database
 from tasks import get_due_tasks
 
@@ -30,26 +31,39 @@ def send_notification(title, message):
 
 def run_reminder_service():
     initialize_database()
-    notified_tasks = set()
+    notified_items = set()
 
     print("JARVIS reminder service started.")
-    print("Checking for due tasks every 30 seconds. Press Ctrl+C to stop.\n")
+    print("Checking for due tasks and assignments every 30 seconds. Press Ctrl+C to stop.\n")
 
     try:
         while True:
-            due_tasks = get_due_tasks(datetime.now())
-            current_ids = set()
+            now = datetime.now()
+            due_tasks = get_due_tasks(now)
+            due_assignments = get_due_assignments(now)
+            current_items = set()
 
             for task_id, title, due_date, due_time in due_tasks:
-                current_ids.add(task_id)
-                if task_id not in notified_tasks:
+                item_key = ("task", task_id)
+                current_items.add(item_key)
+                if item_key not in notified_items:
                     send_notification(
-                        "JARVIS REMINDER",
+                        "JARVIS TASK REMINDER",
                         f"{title}\nDue: {format_due(due_date, due_time)}",
                     )
-                    notified_tasks.add(task_id)
+                    notified_items.add(item_key)
 
-            notified_tasks.intersection_update(current_ids)
+            for assignment_id, title, subject, due_date, due_time in due_assignments:
+                item_key = ("assignment", assignment_id)
+                current_items.add(item_key)
+                if item_key not in notified_items:
+                    send_notification(
+                        "JARVIS ASSIGNMENT REMINDER",
+                        f"{title}\nSubject: {subject}\nDue: {format_due(due_date, due_time)}",
+                    )
+                    notified_items.add(item_key)
+
+            notified_items.intersection_update(current_items)
             time.sleep(CHECK_INTERVAL_SECONDS)
 
     except KeyboardInterrupt:
