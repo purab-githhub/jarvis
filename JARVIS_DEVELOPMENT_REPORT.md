@@ -2,8 +2,8 @@
 
 **Project:** JARVIS — Personal AI Student Assistant  
 **Repository:** `purab-githhub/jarvis`  
-**Report date:** 26 August 2026  
-**Current milestone:** v0.6 — Assignment Management Foundation
+**Report date:** 27 August 2026  
+**Current milestone:** v0.7 — Unified Task & Assignment Reminder System
 
 ---
 
@@ -22,7 +22,10 @@ main.py ─────── command interface
              ▼
          jarvis.db
 
-reminder_service.py ─ continuous task reminder checking
+reminder_service.py
+ │
+ ├── checks due tasks
+ └── checks due assignments
 ```
 
 ## Implemented Features
@@ -37,13 +40,9 @@ reminder_service.py ─ continuous task reminder checking
 - Mark tasks completed
 - Detect due and overdue tasks
 
-### Background Reminders
+### Assignments
 
-`reminder_service.py` checks pending tasks continuously and uses the free `plyer` dependency for desktop notifications when supported, with a console fallback.
-
-### Assignments — New in v0.6
-
-A dedicated `assignments` table and `assignments.py` module now separate academic assignments from ordinary tasks.
+A dedicated `assignments` table and `assignments.py` module separate academic assignments from ordinary tasks.
 
 Each assignment stores:
 
@@ -55,7 +54,7 @@ Each assignment stores:
 - Status
 - Creation timestamp
 
-New commands:
+Commands:
 
 ```text
 assignment <title> for <subject> due <date> at <time>
@@ -64,18 +63,19 @@ pendingassignments
 completeassignment <id>
 ```
 
-Example:
+### Unified Background Reminders — New in v0.7
 
-```text
-assignment DSA linked list submission for Data Structures due next monday at 6 pm
-```
+`reminder_service.py` now checks both pending tasks and pending assignments every 30 seconds.
 
-Then:
+The service:
 
-```text
-assignments
-completeassignment 1
-```
+- Detects due and overdue tasks
+- Detects due and overdue assignments
+- Uses distinct reminder titles for tasks and assignments
+- Includes the assignment subject in assignment notifications
+- Uses the free `plyer` dependency for desktop notifications when supported
+- Falls back to console output when desktop notifications are unavailable
+- Avoids repeatedly notifying the same item during one service run
 
 ## Current Workflow
 
@@ -86,9 +86,9 @@ Store permanently in SQLite
         ↓
 Optional date and time
         ↓
-Check/manage from JARVIS
+Unified reminder service checks deadlines
         ↓
-Reminder service checks task deadlines
+JARVIS sends task/assignment reminder
         ↓
 Complete item when finished
 ```
@@ -97,7 +97,7 @@ Complete item when finished
 
 The reminder service must currently be started manually. Automatic operating-system startup and local notification testing are still pending.
 
-Assignments are currently managed as their own academic records, while the existing reminder service monitors the task table. Integrating assignment deadlines into the unified reminder service is a future improvement.
+The reminder service also needs to be running for continuous checks; running the service from Codespaces is useful for logic testing, while desktop notifications are best tested on a local computer.
 
 ## Development Roadmap
 
@@ -109,8 +109,8 @@ Assignments are currently managed as their own academic records, while the exist
 - [x] Date and time parsing
 - [x] Due/overdue detection
 - [x] Background reminder-service foundation
+- [x] Unified reminders for tasks and assignments
 - [ ] Automatic startup/background scheduling
-- [ ] Unified reminders for tasks and assignments
 
 ### Phase 2 — Student Productivity
 
@@ -134,8 +134,8 @@ Assignments are currently managed as their own academic records, while the exist
 
 ## Immediate Next Step
 
-The next practical development step is to integrate assignment deadlines into the reminder service so tasks and assignments are handled by one unified reminder system.
+The next practical development step is to add a Notes module so JARVIS can persist and retrieve student notes, while keeping the project modular before expanding into schedules and planning.
 
 ## Current Status
 
-> **JARVIS v0.6 — Persistent Task, Reminder, and Assignment Management Foundation**
+> **JARVIS v0.7 — Persistent Task, Assignment, and Unified Reminder Management Foundation**
