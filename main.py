@@ -3,6 +3,7 @@ import re
 
 from assignments import add_assignment, complete_assignment, view_assignments
 from database import initialize_database
+from notes import add_note, get_note, search_notes, view_notes
 from tasks import add_task, complete_task, get_due_tasks, view_tasks
 
 
@@ -10,7 +11,6 @@ def parse_due_date(command):
     match = re.search(r"\s+due\s+(.+)$", command, re.IGNORECASE)
     if not match:
         return command.strip(), None, None
-
     title = command[:match.start()].strip()
     due_text = match.group(1).strip()
     time_match = re.search(r"\s+at\s+(.+)$", due_text, re.IGNORECASE)
@@ -18,19 +18,14 @@ def parse_due_date(command):
     if time_match:
         due_text = due_text[:time_match.start()].strip()
         time_text = time_match.group(1).strip().lower()
-
     date_text = due_text.lower()
     today = date.today()
     relative_dates = {"today": today, "tomorrow": today + timedelta(days=1)}
     due_date = None
-
     if date_text in relative_dates:
         due_date = relative_dates[date_text]
     else:
-        weekday_names = {
-            "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
-            "friday": 4, "saturday": 5, "sunday": 6,
-        }
+        weekday_names = {"monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3, "friday": 4, "saturday": 5, "sunday": 6}
         weekday_match = re.fullmatch(r"(next\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)", date_text)
         if weekday_match:
             is_next = bool(weekday_match.group(1))
@@ -48,10 +43,8 @@ def parse_due_date(command):
                     break
                 except ValueError:
                     pass
-
     if due_date is None:
         return title, "INVALID", None
-
     due_time = None
     if time_text:
         normalized = re.sub(r"\s+", " ", time_text)
@@ -63,7 +56,6 @@ def parse_due_date(command):
                 pass
         if due_time is None:
             return title, due_date.isoformat(), "INVALID"
-
     return title, due_date.isoformat(), due_time
 
 
@@ -77,6 +69,21 @@ def parse_assignment(command):
         subject = subject_match.group(1).strip()
         title = title[:subject_match.start()].strip()
     return title, subject, due_date, due_time
+
+
+def parse_note(command):
+    subject = "General"
+    subject_match = re.search(r"\s+for\s+(.+)$", command, re.IGNORECASE)
+    if subject_match:
+        subject = subject_match.group(1).strip()
+        command = command[:subject_match.start()].strip()
+    if ":" not in command:
+        return None, None, subject
+    title, content = command.split(":", 1)
+    title, content = title.strip(), content.strip()
+    if not title or not content:
+        return None, None, subject
+    return title, content, subject
 
 
 def print_tasks(tasks):
@@ -102,6 +109,16 @@ def print_assignments(assignments):
         if due_time:
             due += f" at {due_time}"
         print(f"[{assignment_id}] {title} | Subject: {subject} | Due: {due} | {status}")
+    print()
+
+
+def print_notes(notes):
+    if not notes:
+        print("\nJARVIS: No notes found.\n")
+        return
+    print()
+    for note_id, title, subject, created_at in notes:
+        print(f"[{note_id}] {title} | Subject: {subject} | Created: {created_at}")
     print()
 
 
@@ -131,6 +148,11 @@ Available commands:
   assignments
   pendingassignments
   completeassignment <id>
+  note <title>: <content> for <subject>
+  notes
+  notes <subject>
+  readnote <id>
+  searchnotes <keyword>
   tasks
   pending
   reminders
@@ -143,18 +165,16 @@ Available commands:
 def run_jarvis():
     initialize_database()
     print("\n================================")
-    print("        JARVIS STUDENT v0.6")
+    print("        JARVIS STUDENT v0.8")
     print("================================")
     show_due_alerts()
     print("Type 'help' to see commands.\n")
-
     while True:
         command = input("JARVIS > ").strip()
         if not command:
             continue
         parts = command.split(maxsplit=1)
         action = parts[0].lower()
-
         if action == "add":
             if len(parts) < 2:
                 print("JARVIS: Please provide a task title.")
@@ -168,24 +188,26 @@ def run_jarvis():
                 continue
             task_id = add_task(title, due_date=due_date, due_time=due_time)
             print(f"JARVIS: Task #{task_id} added successfully.")
-
         elif action == "assignment":
             if len(parts) < 2:
                 print("JARVIS: Use assignment <title> for <subject> due <date> at <time>.")
                 continue
             title, subject, due_date, due_time = parse_assignment(parts[1])
-            if due_date == "INVALID":
-                print("JARVIS: I could not understand the assignment date.")
-                continue
-            if due_time == "INVALID":
-                print("JARVIS: I could not understand the assignment time.")
-                continue
-            if not title:
-                print("JARVIS: Please provide an assignment title.")
+            if due_date == "INVALID" or due_time == "INVALID":
+                print("JARVIS: I could not understand the assignment deadline.")
                 continue
             assignment_id = add_assignment(title, subject, due_date, due_time)
             print(f"JARVIS: Assignment #{assignment_id} added successfully.")
-
+        elif action == "note":
+            if len(parts) < 2:
+                print("JARVIS: Use note <title>: <content> for <subject>.")
+                continue
+            title, content, subject = parse_note(parts[1])
+            if not title:
+                print("JARVIS: Use note <title>: <content> for <subject>.")
+                continue
+            note_id = add_note(title, content, subject)
+            print(f"JARVIS: Note #{note_id} saved successfully.")
         elif action == "tasks":
             print_tasks(view_tasks())
         elif action == "pending":
@@ -194,24 +216,36 @@ def run_jarvis():
             print_assignments(view_assignments())
         elif action == "pendingassignments":
             print_assignments(view_assignments("Pending"))
+        elif action == "notes":
+            subject = parts[1] if len(parts) > 1 else None
+            print_notes(view_notes(subject))
+        elif action == "readnote":
+            if len(parts) < 2 or not parts[1].isdigit():
+                print("JARVIS: Use readnote <note_id>.")
+                continue
+            note = get_note(int(parts[1]))
+            if note:
+                note_id, title, content, subject, created_at = note
+                print(f"\n[{note_id}] {title}\nSubject: {subject}\nCreated: {created_at}\n\n{content}\n")
+            else:
+                print("JARVIS: Note not found.")
+        elif action == "searchnotes":
+            if len(parts) < 2:
+                print("JARVIS: Use searchnotes <keyword>.")
+                continue
+            print_notes(search_notes(parts[1]))
         elif action == "reminders":
             show_due_alerts()
         elif action == "complete":
             if len(parts) < 2 or not parts[1].isdigit():
                 print("JARVIS: Use complete <task_id>")
                 continue
-            if complete_task(int(parts[1])):
-                print(f"JARVIS: Task #{parts[1]} completed successfully.")
-            else:
-                print("JARVIS: Task not found or already completed.")
+            print(f"JARVIS: {'Task completed successfully.' if complete_task(int(parts[1])) else 'Task not found or already completed.'}")
         elif action == "completeassignment":
             if len(parts) < 2 or not parts[1].isdigit():
                 print("JARVIS: Use completeassignment <assignment_id>")
                 continue
-            if complete_assignment(int(parts[1])):
-                print(f"JARVIS: Assignment #{parts[1]} completed successfully.")
-            else:
-                print("JARVIS: Assignment not found or already completed.")
+            print(f"JARVIS: {'Assignment completed successfully.' if complete_assignment(int(parts[1])) else 'Assignment not found or already completed.'}")
         elif action == "help":
             show_help()
         elif action in {"exit", "quit"}:
