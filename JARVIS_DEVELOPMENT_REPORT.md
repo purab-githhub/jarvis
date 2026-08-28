@@ -2,8 +2,8 @@
 
 **Project:** JARVIS — Personal AI Student Assistant  
 **Repository:** `purab-githhub/jarvis`  
-**Report date:** 27 August 2026  
-**Current milestone:** v0.7 — Unified Task & Assignment Reminder System
+**Report date:** 28 August 2026  
+**Current milestone:** v0.8 — Tasks, Assignments, Notes & Unified Reminders
 
 ---
 
@@ -17,13 +17,13 @@ main.py ─────── command interface
  │
  ├── tasks.py ─────── task management
  ├── assignments.py ─ assignment management
+ ├── notes.py ─────── note management
  └── database.py ──── SQLite setup
              │
              ▼
          jarvis.db
 
 reminder_service.py
- │
  ├── checks due tasks
  └── checks due assignments
 ```
@@ -31,91 +31,91 @@ reminder_service.py
 ## Implemented Features
 
 ### Tasks
-
-- Add tasks
-- Store tasks permanently in SQLite
-- Add due dates and due times
-- Understand `today`, `tomorrow`, weekdays, `next monday`, standard dates, and common time formats
-- View all or pending tasks
-- Mark tasks completed
-- Detect due and overdue tasks
+- Persistent SQLite storage
+- Due dates and due times
+- `today`, `tomorrow`, weekdays, `next monday`, standard dates, and common time formats
+- View pending/all tasks and mark tasks completed
+- Due/overdue detection
 
 ### Assignments
+- Separate assignments table and module
+- Subject, deadline, time, status, and creation timestamp
+- View pending/all assignments and mark assignments completed
 
-A dedicated `assignments` table and `assignments.py` module separate academic assignments from ordinary tasks.
+### Unified Background Reminders
+- Checks tasks and assignments every 30 seconds
+- Desktop notifications through free `plyer` where supported
+- Console fallback
+- Prevents repeated notifications during the same service run
 
-Each assignment stores:
+### Notes — New in v0.8
+A dedicated `notes` table and `notes.py` module now allow JARVIS to persist study notes.
 
+Each note stores:
 - Unique ID
-- Assignment title
-- Subject
-- Due date
-- Due time
-- Status
+- Title
+- Full content
+- Subject/category
 - Creation timestamp
 
 Commands:
 
 ```text
-assignment <title> for <subject> due <date> at <time>
-assignments
-pendingassignments
-completeassignment <id>
+note <title>: <content> for <subject>
+notes
+notes <subject>
+readnote <id>
+searchnotes <keyword>
 ```
 
-### Unified Background Reminders — New in v0.7
+Example:
 
-`reminder_service.py` now checks both pending tasks and pending assignments every 30 seconds.
+```text
+note OSI Layers: Application, Presentation, Session, Transport, Network, Data Link, Physical for Computer Networks
+```
 
-The service:
+Then:
 
-- Detects due and overdue tasks
-- Detects due and overdue assignments
-- Uses distinct reminder titles for tasks and assignments
-- Includes the assignment subject in assignment notifications
-- Uses the free `plyer` dependency for desktop notifications when supported
-- Falls back to console output when desktop notifications are unavailable
-- Avoids repeatedly notifying the same item during one service run
+```text
+notes Computer Networks
+readnote 1
+searchnotes transport
+```
 
 ## Current Workflow
 
 ```text
-Create task or assignment
+Create task / assignment / note
         ↓
 Store permanently in SQLite
         ↓
-Optional date and time
+Tasks and assignments may include deadlines
         ↓
-Unified reminder service checks deadlines
+Reminder service checks deadlines
         ↓
-JARVIS sends task/assignment reminder
-        ↓
-Complete item when finished
+Notes can be listed, filtered, read, or searched
 ```
 
-## Current Limitation
-
-The reminder service must currently be started manually. Automatic operating-system startup and local notification testing are still pending.
-
-The reminder service also needs to be running for continuous checks; running the service from Codespaces is useful for logic testing, while desktop notifications are best tested on a local computer.
+## Current Limitations
+- Reminder service still requires manual startup; automatic OS startup is pending.
+- Desktop notifications are best tested locally rather than in Codespaces.
+- Note creation is currently command-based rather than conversational or multi-line.
+- Search is basic keyword matching.
 
 ## Development Roadmap
 
 ### Phase 1 — Core Student Assistant
-
-- [x] Repository setup
 - [x] SQLite database foundation
 - [x] Task storage and completion
-- [x] Date and time parsing
+- [x] Date/time parsing
 - [x] Due/overdue detection
 - [x] Background reminder-service foundation
 - [x] Unified reminders for tasks and assignments
 - [ ] Automatic startup/background scheduling
 
 ### Phase 2 — Student Productivity
-
-- [x] Assignments module foundation
-- [ ] Notes module
+- [x] Assignments module
+- [x] Notes module
 - [ ] Schedule module
 - [ ] Exam tracker
 - [ ] Practical/lab tracker
@@ -123,7 +123,6 @@ The reminder service also needs to be running for continuous checks; running the
 - [ ] Weekly planning
 
 ### Later Phases
-
 - Better natural-language understanding
 - Context-aware commands
 - Voice input/output
@@ -134,8 +133,8 @@ The reminder service also needs to be running for continuous checks; running the
 
 ## Immediate Next Step
 
-The next practical development step is to add a Notes module so JARVIS can persist and retrieve student notes, while keeping the project modular before expanding into schedules and planning.
+The next practical step is a **Schedule module** for classes, study sessions, and recurring weekly events. That will let JARVIS answer questions such as what is scheduled today and will provide the foundation for daily agendas and weekly planning.
 
 ## Current Status
 
-> **JARVIS v0.7 — Persistent Task, Assignment, and Unified Reminder Management Foundation**
+> **JARVIS v0.8 — Persistent Task, Assignment, Notes, and Unified Reminder Foundation**
