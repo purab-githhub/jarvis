@@ -50,6 +50,18 @@ def initialize_database():
         )
     """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS schedule (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            event_date TEXT NOT NULL,
+            event_time TEXT,
+            event_type TEXT DEFAULT 'Study',
+            status TEXT DEFAULT 'Planned',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
     conn.commit()
     conn.close()
 
