@@ -4,6 +4,7 @@ import re
 from assignments import add_assignment, complete_assignment, view_assignments
 from database import initialize_database
 from notes import add_note, get_note, search_notes, view_notes
+from schedule import add_event, complete_event, get_today_events, view_events
 from tasks import add_task, complete_task, get_due_tasks, view_tasks
 
 
@@ -86,6 +87,16 @@ def parse_note(command):
     return title, content, subject
 
 
+def parse_schedule(command):
+    event_type = "Study"
+    type_match = re.search(r"\s+type\s+(.+)$", command, re.IGNORECASE)
+    if type_match:
+        event_type = type_match.group(1).strip()
+        command = command[:type_match.start()].strip()
+    title, event_date, event_time = parse_due_date(command)
+    return title, event_date, event_time, event_type
+
+
 def print_tasks(tasks):
     if not tasks:
         print("\nJARVIS: No tasks found.\n")
@@ -122,6 +133,17 @@ def print_notes(notes):
     print()
 
 
+def print_schedule(events):
+    if not events:
+        print("\nJARVIS: No schedule events found.\n")
+        return
+    print()
+    for event_id, title, event_date, event_time, event_type, status in events:
+        when = event_date + (f" at {event_time}" if event_time else "")
+        print(f"[{event_id}] {title} | {event_type} | {when} | {status}")
+    print()
+
+
 def show_due_alerts():
     tasks = get_due_tasks()
     if not tasks:
@@ -153,6 +175,10 @@ Available commands:
   notes <subject>
   readnote <id>
   searchnotes <keyword>
+  schedule <event> due tomorrow at 6 pm type Study
+  schedulelist
+  today
+  completeschedule <id>
   tasks
   pending
   reminders
@@ -165,7 +191,7 @@ Available commands:
 def run_jarvis():
     initialize_database()
     print("\n================================")
-    print("        JARVIS STUDENT v0.8")
+    print("        JARVIS STUDENT v0.9")
     print("================================")
     show_due_alerts()
     print("Type 'help' to see commands.\n")
@@ -208,6 +234,25 @@ def run_jarvis():
                 continue
             note_id = add_note(title, content, subject)
             print(f"JARVIS: Note #{note_id} saved successfully.")
+        elif action == "schedule":
+            if len(parts) < 2:
+                print("JARVIS: Use schedule <event> due <date> at <time> type <type>.")
+                continue
+            title, event_date, event_time, event_type = parse_schedule(parts[1])
+            if event_date == "INVALID" or event_time == "INVALID" or not event_date:
+                print("JARVIS: I could not understand the schedule date/time.")
+                continue
+            event_id = add_event(title, event_date, event_time, event_type)
+            print(f"JARVIS: Schedule event #{event_id} added successfully.")
+        elif action == "schedulelist":
+            print_schedule(view_events())
+        elif action == "today":
+            print_schedule(get_today_events())
+        elif action == "completeschedule":
+            if len(parts) < 2 or not parts[1].isdigit():
+                print("JARVIS: Use completeschedule <event_id>")
+                continue
+            print(f"JARVIS: {'Schedule event completed successfully.' if complete_event(int(parts[1])) else 'Schedule event not found or already completed.'}")
         elif action == "tasks":
             print_tasks(view_tasks())
         elif action == "pending":
