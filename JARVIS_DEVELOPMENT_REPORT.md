@@ -2,8 +2,8 @@
 
 **Project:** JARVIS — Personal AI Student Assistant  
 **Repository:** `purab-githhub/jarvis`  
-**Report date:** 29 August 2026  
-**Current milestone:** v0.9 — Tasks, Assignments, Notes, Reminders & Schedule
+**Report date:** 30 August 2026  
+**Current milestone:** v0.10 — Unified Daily Agenda
 
 ---
 
@@ -15,11 +15,12 @@ YOU
  ▼
 main.py ─────── command interface
  │
- ├── tasks.py ─────── task management
- ├── assignments.py ─ assignment management
- ├── notes.py ─────── note management
- ├── schedule.py ──── schedule management
- └── database.py ──── SQLite setup
+ ├── agenda.py ─────── unified daily view
+ ├── tasks.py ──────── task management
+ ├── assignments.py ── assignment management
+ ├── notes.py ──────── note management
+ ├── schedule.py ───── schedule management
+ └── database.py ───── SQLite setup
              │
              ▼
          jarvis.db
@@ -53,13 +54,6 @@ reminder_service.py
 ### Notes
 A dedicated `notes` table and `notes.py` module allow JARVIS to persist study notes.
 
-Each note stores:
-- Unique ID
-- Title
-- Full content
-- Subject/category
-- Creation timestamp
-
 Commands:
 
 ```text
@@ -70,17 +64,8 @@ readnote <id>
 searchnotes <keyword>
 ```
 
-### Schedule — New in v0.9
-A dedicated `schedule` table and `schedule.py` module now allow JARVIS to store planned classes, study sessions, and other events.
-
-Each schedule event stores:
-- Unique ID
-- Event title
-- Date
-- Optional time
-- Event type
-- Planned/Completed status
-- Creation timestamp
+### Schedule
+A dedicated `schedule` table and `schedule.py` module allow JARVIS to store planned classes, study sessions, and other events.
 
 Commands:
 
@@ -91,25 +76,31 @@ today
 completeschedule <id>
 ```
 
+### Daily Agenda — New in v0.10
+A new `agenda.py` module combines today's pending tasks, assignments, and planned schedule events into a single view.
+
+The `today` command now provides one student-focused daily overview instead of showing only schedule events.
+
 Example:
 
 ```text
-schedule DSA revision due tomorrow at 7 pm type Study
+JARVIS > today
+
+========== JARVIS DAILY AGENDA (2026-08-30) ==========
+
+[STUDY / TASKS]
+  [Task #1] Complete DSA revision | General at 10:00
+
+[ASSIGNMENTS]
+  [Assignment #2] Submit CN assignment | Computer Networks at 18:00
+
+[SCHEDULE]
+  [Event #3] OSI revision | Study at 20:00
+
+JARVIS: 3 item(s) planned for today.
 ```
 
-Then:
-
-```text
-today
-```
-
-shows the events scheduled for today, while:
-
-```text
-schedulelist
-```
-
-shows planned upcoming events.
+The agenda reads directly from SQLite and only includes pending tasks, pending assignments, and planned schedule events for the selected day.
 
 ## Current Workflow
 
@@ -122,7 +113,7 @@ Tasks and assignments may include deadlines
         ↓
 Reminder service checks task/assignment deadlines
         ↓
-Schedule provides planned daily events
+Daily Agenda combines today's work and schedule
         ↓
 Notes can be listed, filtered, read, or searched
 ```
@@ -131,9 +122,10 @@ Notes can be listed, filtered, read, or searched
 - Reminder service still requires manual startup; automatic OS startup is pending.
 - Desktop notifications are best tested locally rather than in Codespaces.
 - Schedule events are currently one-time events; recurring weekly schedules are not yet implemented.
-- Schedule commands are currently structured rather than fully conversational.
+- Schedule and task commands are currently structured rather than fully conversational.
 - Note creation is command-based rather than conversational or multi-line.
 - Search is basic keyword matching.
+- The daily agenda currently covers one date at a time and does not yet prioritize or intelligently reschedule work.
 
 ## Development Roadmap
 
@@ -150,10 +142,10 @@ Notes can be listed, filtered, read, or searched
 - [x] Assignments module
 - [x] Notes module
 - [x] Schedule module
+- [x] Daily agenda
 - [ ] Recurring weekly schedule
 - [ ] Exam tracker
 - [ ] Practical/lab tracker
-- [ ] Daily agenda combining tasks, assignments, and schedule
 - [ ] Weekly planning
 
 ### Later Phases
@@ -167,8 +159,8 @@ Notes can be listed, filtered, read, or searched
 
 ## Immediate Next Step
 
-The next practical step is to build a **Daily Agenda** that combines today's schedule events, due tasks, due assignments, and important reminders into one JARVIS view. After that, recurring weekly schedule support can be added.
+The next practical step is to add **recurring weekly schedule support**, allowing classes and regular study sessions to repeat automatically without entering them every week. After that, the agenda can become the foundation for weekly planning and workload prioritization.
 
 ## Current Status
 
-> **JARVIS v0.9 — Persistent Task, Assignment, Notes, Schedule, and Reminder Foundation**
+> **JARVIS v0.10 — Persistent Tasks, Assignments, Notes, Schedule, Reminders, and Unified Daily Agenda**
