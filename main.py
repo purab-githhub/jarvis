@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta
 import re
 
+from agenda import get_daily_agenda
 from assignments import add_assignment, complete_assignment, view_assignments
 from database import initialize_database
 from notes import add_note, get_note, search_notes, view_notes
@@ -144,6 +145,39 @@ def print_schedule(events):
     print()
 
 
+def show_daily_agenda():
+    agenda_date = date.today().isoformat()
+    tasks, assignments, events = get_daily_agenda(agenda_date)
+    print(f"\n========== JARVIS DAILY AGENDA ({agenda_date}) ==========")
+
+    print("\n[STUDY / TASKS]")
+    if tasks:
+        for task_id, title, category, due_time in tasks:
+            when = f" at {due_time}" if due_time else ""
+            print(f"  [Task #{task_id}] {title} | {category}{when}")
+    else:
+        print("  No pending tasks due today.")
+
+    print("\n[ASSIGNMENTS]")
+    if assignments:
+        for assignment_id, title, subject, due_time in assignments:
+            when = f" at {due_time}" if due_time else ""
+            print(f"  [Assignment #{assignment_id}] {title} | {subject}{when}")
+    else:
+        print("  No assignments due today.")
+
+    print("\n[SCHEDULE]")
+    if events:
+        for event_id, title, event_time, event_type in events:
+            when = f" at {event_time}" if event_time else ""
+            print(f"  [Event #{event_id}] {title} | {event_type}{when}")
+    else:
+        print("  No planned schedule events today.")
+
+    total = len(tasks) + len(assignments) + len(events)
+    print(f"\nJARVIS: {total} item(s) planned for today.\n")
+
+
 def show_due_alerts():
     tasks = get_due_tasks()
     if not tasks:
@@ -177,7 +211,7 @@ Available commands:
   searchnotes <keyword>
   schedule <event> due tomorrow at 6 pm type Study
   schedulelist
-  today
+  today                 Show the unified daily agenda
   completeschedule <id>
   tasks
   pending
@@ -191,7 +225,7 @@ Available commands:
 def run_jarvis():
     initialize_database()
     print("\n================================")
-    print("        JARVIS STUDENT v0.9")
+    print("        JARVIS STUDENT v0.10")
     print("================================")
     show_due_alerts()
     print("Type 'help' to see commands.\n")
@@ -247,7 +281,7 @@ def run_jarvis():
         elif action == "schedulelist":
             print_schedule(view_events())
         elif action == "today":
-            print_schedule(get_today_events())
+            show_daily_agenda()
         elif action == "completeschedule":
             if len(parts) < 2 or not parts[1].isdigit():
                 print("JARVIS: Use completeschedule <event_id>")
