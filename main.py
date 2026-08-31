@@ -5,6 +5,7 @@ from agenda import get_daily_agenda
 from assignments import add_assignment, complete_assignment, view_assignments
 from database import initialize_database
 from notes import add_note, get_note, search_notes, view_notes
+from recurring_schedule import WEEKDAYS, add_recurring_event, complete_recurring_event, view_recurring_events
 from schedule import add_event, complete_event, get_today_events, view_events
 from tasks import add_task, complete_task, get_due_tasks, view_tasks
 
@@ -27,7 +28,7 @@ def parse_due_date(command):
     if date_text in relative_dates:
         due_date = relative_dates[date_text]
     else:
-        weekday_names = {"monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3, "friday": 4, "saturday": 5, "sunday": 6}
+        weekday_names = WEEKDAYS
         weekday_match = re.fullmatch(r"(next\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)", date_text)
         if weekday_match:
             is_next = bool(weekday_match.group(1))
@@ -98,6 +99,28 @@ def parse_schedule(command):
     return title, event_date, event_time, event_type
 
 
+def parse_recurring(command):
+    event_type = "Study"
+    type_match = re.search(r"\s+type\s+(.+)$", command, re.IGNORECASE)
+    if type_match:
+        event_type = type_match.group(1).strip()
+        command = command[:type_match.start()].strip()
+    match = re.search(r"\s+every\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s+at\s+(.+)$", command, re.IGNORECASE)
+    if not match:
+        return command.strip(), None, None, event_type
+    title = command[:match.start()].strip()
+    weekday = WEEKDAYS[match.group(1).lower()]
+    time_text = re.sub(r"\s+", " ", match.group(2).strip())
+    event_time = None
+    for fmt in ("%I %p", "%I:%M %p", "%H:%M"):
+        try:
+            event_time = datetime.strptime(time_text.upper(), fmt).strftime("%H:%M")
+            break
+        except ValueError:
+            pass
+    return title, weekday, event_time, event_type
+
+
 def print_tasks(tasks):
     if not tasks:
         print("\nJARVIS: No tasks found.\n")
@@ -145,11 +168,22 @@ def print_schedule(events):
     print()
 
 
+def print_recurring_events(events):
+    if not events:
+        print("\nJARVIS: No recurring schedule events found.\n")
+        return
+    print()
+    for event_id, title, weekday, event_time, event_type, status in events:
+        day = list(WEEKDAYS.keys())[weekday].title()
+        when = f"{day} at {event_time}" if event_time else day
+        print(f"[{event_id}] {title} | {event_type} | Every {when} | {status}")
+    print()
+
+
 def show_daily_agenda():
     agenda_date = date.today().isoformat()
     tasks, assignments, events = get_daily_agenda(agenda_date)
     print(f"\n========== JARVIS DAILY AGENDA ({agenda_date}) ==========")
-
     print("\n[STUDY / TASKS]")
     if tasks:
         for task_id, title, category, due_time in tasks:
@@ -157,7 +191,6 @@ def show_daily_agenda():
             print(f"  [Task #{task_id}] {title} | {category}{when}")
     else:
         print("  No pending tasks due today.")
-
     print("\n[ASSIGNMENTS]")
     if assignments:
         for assignment_id, title, subject, due_time in assignments:
@@ -165,7 +198,6 @@ def show_daily_agenda():
             print(f"  [Assignment #{assignment_id}] {title} | {subject}{when}")
     else:
         print("  No assignments due today.")
-
     print("\n[SCHEDULE]")
     if events:
         for event_id, title, event_time, event_type in events:
@@ -173,7 +205,6 @@ def show_daily_agenda():
             print(f"  [Event #{event_id}] {title} | {event_type}{when}")
     else:
         print("  No planned schedule events today.")
-
     total = len(tasks) + len(assignments) + len(events)
     print(f"\nJARVIS: {total} item(s) planned for today.\n")
 
@@ -211,6 +242,9 @@ Available commands:
   searchnotes <keyword>
   schedule <event> due tomorrow at 6 pm type Study
   schedulelist
+  recurring <event> every monday at 10 am type Class
+  recurringlist
+  completerecurring <id>
   today                 Show the unified daily agenda
   completeschedule <id>
   tasks
@@ -225,7 +259,7 @@ Available commands:
 def run_jarvis():
     initialize_database()
     print("\n================================")
-    print("        JARVIS STUDENT v0.10")
+    print("        JARVIS STUDENT v0.11")
     print("================================")
     show_due_alerts()
     print("Type 'help' to see commands.\n")
@@ -278,6 +312,23 @@ def run_jarvis():
                 continue
             event_id = add_event(title, event_date, event_time, event_type)
             print(f"JARVIS: Schedule event #{event_id} added successfully.")
+        elif action == "recurring":
+            if len(parts) < 2:
+                print("JARVIS: Use recurring <event> every <weekday> at <time> type <type>.")
+                continue
+            title, weekday, event_time, event_type = parse_recurring(parts[1])
+            if weekday is None or event_time is None or not title:
+                print("JARVIS: Use recurring <event> every <weekday> at <time> type <type>.")
+                continue
+            event_id = add_recurring_event(title, weekday, event_time, event_type)
+            print(f"JARVIS: Recurring event #{event_id} added successfully.")
+        elif action == "recurringlist":
+            print_recurring_events(view_recurring_events())
+        elif action == "completerecurring":
+            if len(parts) < 2 or not parts[1].isdigit():
+                print("JARVIS: Use completerecurring <id>")
+                continue
+            print(f"JARVIS: {'Recurring schedule disabled successfully.' if complete_recurring_event(int(parts[1])) else 'Recurring event not found or already inactive.'}")
         elif action == "schedulelist":
             print_schedule(view_events())
         elif action == "today":
