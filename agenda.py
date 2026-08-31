@@ -1,10 +1,11 @@
 from datetime import date
 
 from database import get_connection
+from recurring_schedule import get_recurring_events_for_date
 
 
 def get_daily_agenda(agenda_date=None):
-    """Return pending tasks, assignments, and planned schedule events for one date."""
+    """Return pending tasks, assignments, and planned one-time/recurring events for one date."""
     agenda_date = agenda_date or date.today().isoformat()
     conn = get_connection()
     cursor = conn.cursor()
@@ -41,8 +42,10 @@ def get_daily_agenda(agenda_date=None):
         (agenda_date,),
     )
     events = cursor.fetchall()
-
     conn.close()
+
+    events.extend(get_recurring_events_for_date(agenda_date))
+    events.sort(key=lambda event: (event[2] is None, event[2] or "23:59", event[0]))
     return tasks, assignments, events
 
 
