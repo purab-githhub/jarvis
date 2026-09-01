@@ -2,8 +2,8 @@
 
 **Project:** JARVIS — Personal AI Student Assistant  
 **Repository:** `purab-githhub/jarvis`  
-**Report date:** 31 August 2026  
-**Current milestone:** v0.11 — Recurring Weekly Schedule Support
+**Report date:** 1 September 2026  
+**Current milestone:** v0.12 — Weekly Planner Foundation
 
 ---
 
@@ -16,6 +16,7 @@ YOU
 main.py ───────────── command interface
  │
  ├── agenda.py ─────── unified daily view
+ ├── weekly_planner.py ─ weekly Monday-Sunday planner
  ├── tasks.py ──────── task management
  ├── assignments.py ── assignment management
  ├── notes.py ──────── note management
@@ -78,11 +79,9 @@ completeschedule <id>
 ```
 
 ### Daily Agenda
-`agenda.py` combines today's pending tasks, assignments, and planned schedule events into one student-focused view.
+`agenda.py` combines today's pending tasks, assignments, and planned schedule events into one student-focused view. Active recurring weekly events matching the current weekday are included automatically.
 
-The agenda now also includes active recurring weekly events that match the current weekday.
-
-### Recurring Weekly Schedule — New in v0.11
+### Recurring Weekly Schedule
 A dedicated `recurring_schedule` table and `recurring_schedule.py` module allow regular events to repeat automatically by weekday.
 
 Example:
@@ -98,7 +97,25 @@ recurringlist
 completerecurring <id>
 ```
 
-Recurring events are stored as weekly templates rather than duplicated into the one-time schedule table. The daily agenda checks the current weekday and includes matching active recurring events automatically.
+Recurring events are stored as weekly templates rather than duplicated into the one-time schedule table.
+
+### Weekly Planner — New in v0.12
+A new `weekly_planner.py` module builds a Monday-Sunday plan by reusing the existing daily agenda for each date. This means the weekly view combines pending tasks, assignments, one-time schedule events, and matching recurring events without duplicating storage logic.
+
+The module provides:
+
+- `get_week_start()` — resolves the Monday of the selected week
+- `get_weekly_plan()` — returns all seven daily agenda datasets
+- `get_weekly_counts()` — summarizes weekly workload
+- `print_weekly_plan()` — prints a human-readable week-at-a-glance view
+
+The planner can currently be tested directly with:
+
+```bash
+python weekly_planner.py
+```
+
+The existing interactive `main.py` command interface remains on v0.11 while the weekly planner is validated before being wired into the main command loop.
 
 ## Current Workflow
 
@@ -115,6 +132,8 @@ Daily Agenda combines today's work and schedule
         ↓
 Recurring schedule adds regular weekly events automatically
         ↓
+Weekly Planner reuses each day's agenda across Monday-Sunday
+        ↓
 Notes can be listed, filtered, read, or searched
 ```
 
@@ -126,7 +145,8 @@ Notes can be listed, filtered, read, or searched
 - Schedule, task, assignment, and note commands are still structured rather than fully conversational.
 - Note creation is command-based rather than conversational or multi-line.
 - Search is basic keyword matching.
-- The daily agenda currently covers one date at a time and does not yet prioritize or intelligently reschedule work.
+- Weekly planner currently prints the combined week but does not yet prioritize workload, detect conflicts, or intelligently reschedule work.
+- The weekly planner is currently exposed as a standalone module while it is validated; main-command integration is the next small integration step.
 
 ## Development Roadmap
 
@@ -145,9 +165,11 @@ Notes can be listed, filtered, read, or searched
 - [x] Schedule module
 - [x] Daily agenda
 - [x] Recurring weekly schedule
+- [x] Weekly planner foundation
+- [ ] Weekly planner main-command integration
 - [ ] Exam tracker
 - [ ] Practical/lab tracker
-- [ ] Weekly planning
+- [ ] Workload prioritization
 
 ### Later Phases
 - Better natural-language understanding
@@ -160,8 +182,8 @@ Notes can be listed, filtered, read, or searched
 
 ## Immediate Next Step
 
-The next practical step is to build the **Weekly Planner**, using the daily agenda, assignments, tasks, one-time schedule, and recurring schedule as inputs. This should provide a useful week-at-a-glance view before adding more advanced AI prioritization.
+Validate the weekly planner and then integrate it into `main.py` as a simple `week` command. After that, the planner can be extended with workload priorities and conflict detection.
 
 ## Current Status
 
-> **JARVIS v0.11 — Persistent Tasks, Assignments, Notes, One-Time & Recurring Schedule, Reminders, and Unified Daily Agenda**
+> **JARVIS v0.12 — Persistent Tasks, Assignments, Notes, One-Time & Recurring Schedule, Reminders, Unified Daily Agenda, and Weekly Planner Foundation**
