@@ -2,8 +2,8 @@
 
 **Project:** JARVIS — Personal AI Student Assistant  
 **Repository:** `purab-githhub/jarvis`  
-**Report date:** 4 September 2026  
-**Current milestone:** v0.15 — Effort-Aware Workload Planning Foundation
+**Report date:** 5 September 2026  
+**Current milestone:** v0.16 — Unified Planner Entry Point
 
 ---
 
@@ -22,6 +22,7 @@ main.py ───────────── command interface
  ├── insights.py ───── standalone insights entry point
  ├── effort_planner.py ─ effort estimates and capacity warnings
  ├── effort.py ─────── standalone effort-planner entry point
+ ├── planner.py ────── unified planner entry point
  ├── tasks.py ──────── task management
  ├── assignments.py ── assignment management
  ├── notes.py ──────── note management
@@ -75,50 +76,39 @@ reminder_service.py
 - Matching events appear automatically in the daily agenda
 
 ### Weekly Planner
-`weekly_planner.py` builds a Monday-Sunday plan by reusing the daily agenda. It combines pending tasks, assignments, one-time schedule events, and matching recurring events.
-
-`week.py` provides a standalone command-line entry point:
-
-```bash
-python week.py
-```
+- Monday-Sunday view built by reusing the daily agenda
+- Combines pending tasks, assignments, one-time schedule events, and recurring events
+- Standalone `week.py` entry point
 
 ### Weekly Planner Insights
-`planner_insights.py` adds a simple, explainable planning layer.
-
-It provides:
-
-- Priority scoring for tasks, assignments, and events
+- Explainable priority scoring
 - Higher urgency for overdue and near-term work
-- Higher base priority for assignments than ordinary tasks/events
-- Exact date/time conflict detection when multiple items share the same explicit slot
-- Daily workload counts
-- A warning marker for days containing five or more planned items
+- Assignment/task/event base priorities
+- Exact date/time conflict detection
+- Daily item-load warnings
+- Standalone `insights.py` entry point
 
-The standalone entry point is:
+### Effort-Aware Workload Planning
+- Transparent estimated minutes based on item type and keywords
+- Daily estimated workload totals
+- Configurable daily capacity, default 240 minutes
+- Capacity overload warnings
+- Standalone `effort.py` entry point
 
-```bash
-python insights.py
-```
+### Unified Planner Entry Point — New in v0.16
+`planner.py` combines the three planner views into one safe standalone workflow:
 
-### Effort-Aware Workload Planning — New in v0.15
-`effort_planner.py` adds transparent estimated effort to weekly planner items.
+1. Weekly planner
+2. Planner insights
+3. Effort-aware workload plan
 
-It currently:
-
-- Estimates minutes using item type and simple title/detail keywords
-- Produces daily estimated workload totals
-- Compares daily estimated work with a configurable capacity
-- Flags days that exceed the default 240-minute capacity
-- Keeps estimates rule-based and editable rather than pretending they are AI predictions
-
-The standalone entry point is:
+Run it with:
 
 ```bash
-python effort.py
+python planner.py
 ```
 
-The current effort estimates are planning defaults, not measured durations. They should later be replaced or refined using user-provided durations and historical completion data.
+This avoids duplicating planning logic and provides a single place to inspect the week before we modify the existing interactive CLI.
 
 ## Current Workflow
 
@@ -141,7 +131,7 @@ Planner Insights ranks urgency and detects exact time conflicts
         ↓
 Effort Planner estimates workload and flags capacity overloads
         ↓
-Notes can be listed, filtered, read, or searched
+Unified Planner presents all three planning views together
 ```
 
 ## Current Limitations
@@ -156,7 +146,7 @@ Notes can be listed, filtered, read, or searched
 - Conflict detection currently catches only exact matches on an explicit date and time; it does not yet know event duration or detect overlapping time ranges.
 - Effort estimates are heuristic defaults and do not yet use user-entered durations or historical data.
 - Daily capacity is currently a configurable fixed default of 240 minutes.
-- The weekly planner and insights remain available through standalone entry points; direct `week`/`insights` integration into the existing `main.py` command loop remains pending.
+- The unified planner is currently a standalone entry point; direct `week`/`insights`/`effort` integration into the existing `main.py` command loop remains pending.
 
 ## Development Roadmap
 
@@ -180,6 +170,7 @@ Notes can be listed, filtered, read, or searched
 - [x] Workload prioritization foundation
 - [x] Exact conflict detection foundation
 - [x] Effort-aware workload planning foundation
+- [x] Unified planner entry point
 - [ ] Weekly planner main-command integration
 - [ ] Duration-aware conflict detection
 - [ ] User-configurable durations/capacity
@@ -197,8 +188,8 @@ Notes can be listed, filtered, read, or searched
 
 ## Immediate Next Step
 
-Safely integrate the planner tools into the existing JARVIS command interface using targeted changes rather than replacing the full CLI. After that, add user-entered event/task durations so conflict detection can identify overlapping time ranges and effort estimates can become personalized.
+Safely integrate the unified planner into the existing JARVIS command interface using a small targeted change. After that, add user-entered durations so conflict detection can identify overlapping time ranges and effort estimates can become personalized.
 
 ## Current Status
 
-> **JARVIS v0.15 — Persistent Tasks, Assignments, Notes, One-Time & Recurring Schedule, Reminders, Unified Daily Agenda, Weekly Planner, Explainable Planner Insights, and Effort-Aware Workload Planning Foundation**
+> **JARVIS v0.16 — Persistent Tasks, Assignments, Notes, One-Time & Recurring Schedule, Reminders, Unified Daily Agenda, Weekly Planner, Explainable Planner Insights, Effort-Aware Workload Planning, and Unified Planner Entry Point**
