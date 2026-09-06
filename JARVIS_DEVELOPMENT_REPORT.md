@@ -2,8 +2,8 @@
 
 **Project:** JARVIS — Personal AI Student Assistant  
 **Repository:** `purab-githhub/jarvis`  
-**Report date:** 5 September 2026  
-**Current milestone:** v0.16 — Unified Planner Entry Point
+**Report date:** 6 September 2026  
+**Current milestone:** v0.17 — User-Entered Effort Estimates
 
 ---
 
@@ -20,15 +20,16 @@ main.py ───────────── command interface
  ├── week.py ───────── standalone weekly-planner entry point
  ├── planner_insights.py ─ priorities, conflicts, daily load
  ├── insights.py ───── standalone insights entry point
- ├── effort_planner.py ─ effort estimates and capacity warnings
+ ├── effort_planner.py ─ effort estimates, overrides, capacity warnings
  ├── effort.py ─────── standalone effort-planner entry point
+ ├── duration.py ────── standalone effort-duration override command
  ├── planner.py ────── unified planner entry point
  ├── tasks.py ──────── task management
  ├── assignments.py ── assignment management
  ├── notes.py ──────── note management
  ├── schedule.py ───── one-time schedule management
  ├── recurring_schedule.py ─ weekly recurring schedule
- └── database.py ───── SQLite setup
+ └── database.py ───── SQLite setup + effort override storage
              │
              ▼
          jarvis.db
@@ -95,7 +96,7 @@ reminder_service.py
 - Capacity overload warnings
 - Standalone `effort.py` entry point
 
-### Unified Planner Entry Point — New in v0.16
+### Unified Planner Entry Point
 `planner.py` combines the three planner views into one safe standalone workflow:
 
 1. Weekly planner
@@ -108,7 +109,21 @@ Run it with:
 python planner.py
 ```
 
-This avoids duplicating planning logic and provides a single place to inspect the week before we modify the existing interactive CLI.
+### User-Entered Effort Estimates — New in v0.17
+JARVIS now supports persistent effort overrides for individual planner items.
+
+Examples:
+
+```bash
+python duration.py task 3 60
+python duration.py assignment 2 120
+python duration.py event 4 90
+python duration.py clear task 3
+```
+
+The override is stored in the SQLite `effort_overrides` table and takes precedence over the heuristic estimate used by `effort_planner.py`. Clearing an override returns the item to the automatic heuristic estimate.
+
+This keeps the planner useful out of the box while allowing the user to gradually personalize estimates.
 
 ## Current Workflow
 
@@ -129,7 +144,11 @@ Weekly Planner reuses each day's agenda across Monday-Sunday
         ↓
 Planner Insights ranks urgency and detects exact time conflicts
         ↓
-Effort Planner estimates workload and flags capacity overloads
+Effort Planner estimates workload
+        ↓
+User duration overrides can replace heuristic estimates
+        ↓
+Capacity warnings use the personalized effort values
         ↓
 Unified Planner presents all three planning views together
 ```
@@ -144,7 +163,7 @@ Unified Planner presents all three planning views together
 - Search is basic keyword matching.
 - Weekly planner insights use simple rules rather than AI-based prioritization.
 - Conflict detection currently catches only exact matches on an explicit date and time; it does not yet know event duration or detect overlapping time ranges.
-- Effort estimates are heuristic defaults and do not yet use user-entered durations or historical data.
+- Effort estimates now support user overrides, but new items still start with heuristic defaults until personalized.
 - Daily capacity is currently a configurable fixed default of 240 minutes.
 - The unified planner is currently a standalone entry point; direct `week`/`insights`/`effort` integration into the existing `main.py` command loop remains pending.
 
@@ -171,9 +190,10 @@ Unified Planner presents all three planning views together
 - [x] Exact conflict detection foundation
 - [x] Effort-aware workload planning foundation
 - [x] Unified planner entry point
+- [x] User-entered effort overrides
 - [ ] Weekly planner main-command integration
 - [ ] Duration-aware conflict detection
-- [ ] User-configurable durations/capacity
+- [ ] User-configurable daily capacity
 - [ ] Exam tracker
 - [ ] Practical/lab tracker
 
@@ -188,8 +208,8 @@ Unified Planner presents all three planning views together
 
 ## Immediate Next Step
 
-Safely integrate the unified planner into the existing JARVIS command interface using a small targeted change. After that, add user-entered durations so conflict detection can identify overlapping time ranges and effort estimates can become personalized.
+Safely integrate the unified planner and duration controls into the existing JARVIS command interface using small targeted changes. Then upgrade conflict detection from exact timestamp matching to duration-aware overlapping time ranges.
 
 ## Current Status
 
-> **JARVIS v0.16 — Persistent Tasks, Assignments, Notes, One-Time & Recurring Schedule, Reminders, Unified Daily Agenda, Weekly Planner, Explainable Planner Insights, Effort-Aware Workload Planning, and Unified Planner Entry Point**
+> **JARVIS v0.17 — Persistent Tasks, Assignments, Notes, One-Time & Recurring Schedule, Reminders, Unified Daily Agenda, Weekly Planner, Explainable Planner Insights, Effort-Aware Workload Planning, Unified Planner Entry Point, and User-Entered Effort Estimates**
