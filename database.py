@@ -74,6 +74,16 @@ def initialize_database():
         )
     """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS effort_overrides (
+            kind TEXT NOT NULL,
+            item_id INTEGER NOT NULL,
+            minutes INTEGER NOT NULL CHECK(minutes > 0),
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (kind, item_id)
+        )
+    """)
+
     conn.commit()
     conn.close()
 
