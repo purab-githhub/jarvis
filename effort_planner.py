@@ -1,5 +1,6 @@
 from collections import defaultdict
 
+from database import get_connection
 from planner_insights import get_weekly_items
 
 
@@ -25,8 +26,23 @@ KEYWORD_MINUTES = {
 }
 
 
+def get_effort_override(kind, item_id):
+    """Return a user-entered effort value, or None when no override exists."""
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT minutes FROM effort_overrides WHERE kind = ? AND item_id = ?",
+        (kind, item_id),
+    ).fetchone()
+    conn.close()
+    return row[0] if row else None
+
+
 def estimate_minutes(item):
-    """Return a transparent effort estimate in minutes for a planner item."""
+    """Return a user override when available, otherwise a transparent estimate."""
+    override = get_effort_override(item.get("kind"), item.get("id"))
+    if override is not None:
+        return override
+
     title = item.get("title", "").lower()
     detail = item.get("detail", "").lower()
     text = f"{title} {detail}"
@@ -34,6 +50,42 @@ def estimate_minutes(item):
         if keyword in text:
             return minutes
     return DEFAULT_MINUTES.get(item.get("kind"), 45)
+
+
+def set_effort_override(kind, item_id, minutes):
+    """Persist a user-entered effort estimate for a planner item."""
+    if kind not in DEFAULT_MINUTES:
+        raise ValueError("kind must be Task, Assignment, or Event")
+    if not isinstance(item_id, int) or item_id <= 0:
+        raise ValueError("item_id must be a positive integer")
+    if not isinstance(minutes, int) or minutes <= 0:
+        raise ValueError("minutes must be a positive integer")
+
+    conn = get_connection()
+    conn.execute(
+        """
+        INSERT INTO effort_overrides (kind, item_id, minutes, updated_at)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(kind, item_id) DO UPDATE SET
+            minutes = excluded.minutes,
+            updated_at = CURRENT_TIMESTAMP
+        """,
+        (kind, item_id, minutes),
+    )
+    conn.commit()
+    conn.close()
+
+
+def clear_effort_override(kind, item_id):
+    """Remove a user-entered effort value so the heuristic estimate is used again."""
+    conn = get_connection()
+    cursor = conn.execute(
+        "DELETE FROM effort_overrides WHERE kind = ? AND item_id = ?",
+        (kind, item_id),
+    )
+    conn.commit()
+    conn.close()
+    return cursor.rowcount > 0
 
 
 def get_effort_items(target_date=None):
