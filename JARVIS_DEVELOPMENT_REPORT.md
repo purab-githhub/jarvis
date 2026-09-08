@@ -2,8 +2,8 @@
 
 **Project:** JARVIS — Personal AI Student Assistant  
 **Repository:** `purab-githhub/jarvis`  
-**Report date:** 7 September 2026  
-**Current milestone:** v0.18 — Duration-Aware Conflict Detection
+**Report date:** 8 September 2026  
+**Current milestone:** v0.19 — Unified Duration-Aware Planner
 
 ---
 
@@ -24,7 +24,7 @@ main.py ───────────── command interface
  ├── effort.py ─────── standalone effort-planner entry point
  ├── duration.py ────── standalone effort-duration override command
  ├── duration_conflicts.py ─ duration-aware overlapping conflict detection
- ├── planner.py ────── unified planner entry point
+ ├── planner.py ────── unified planner + duration conflict entry point
  ├── tasks.py ──────── task management
  ├── assignments.py ── assignment management
  ├── notes.py ──────── note management
@@ -98,11 +98,12 @@ reminder_service.py
 - Standalone `effort.py` entry point
 
 ### Unified Planner Entry Point
-`planner.py` combines the three planner views into one safe standalone workflow:
+`planner.py` now combines all planner analysis into one workflow:
 
 1. Weekly planner
 2. Planner insights
 3. Effort-aware workload plan
+4. Duration-aware conflict detection
 
 Run it with:
 
@@ -124,10 +125,10 @@ python duration.py clear task 3
 
 The override is stored in the SQLite `effort_overrides` table and takes precedence over the heuristic estimate used by `effort_planner.py`. Clearing an override returns the item to the automatic heuristic estimate.
 
-### Duration-Aware Conflict Detection — New in v0.18
-`duration_conflicts.py` now treats each timed planner item as a time range using its estimated or user-entered duration.
+### Duration-Aware Conflict Detection
+`duration_conflicts.py` treats each timed planner item as a time range using its estimated or user-entered duration.
 
-Instead of only detecting identical timestamps, JARVIS can now detect overlaps such as:
+Instead of only detecting identical timestamps, JARVIS can detect overlaps such as:
 
 ```text
 07:00–08:30  DSA Revision
@@ -142,7 +143,7 @@ Run it with:
 python duration_conflicts.py
 ```
 
-This deliberately reuses `effort_planner.py`, so personal duration overrides automatically influence conflict detection.
+The unified `planner.py` now includes this analysis automatically, so personal duration overrides affect both workload totals and overlap detection.
 
 ## Current Workflow
 
@@ -171,7 +172,7 @@ Capacity warnings use the personalized effort values
         ↓
 Duration-aware conflict detection converts timed items into ranges
         ↓
-Unified Planner presents the planning views together
+Unified Planner presents all planning analysis together
 ```
 
 ## Current Limitations
@@ -185,7 +186,7 @@ Unified Planner presents the planning views together
 - Weekly planner insights use simple rules rather than AI-based prioritization.
 - Duration-aware conflict detection depends on an explicit start time and estimated/user-entered duration; untimed items cannot be reliably checked for overlap.
 - Daily capacity is currently a configurable fixed default of 240 minutes.
-- The unified planner is currently a standalone entry point; direct `week`/`insights`/`effort` integration into the existing `main.py` command loop remains pending.
+- Direct `week`/`insights`/`effort`/`planner` integration into the existing `main.py` command loop remains pending.
 
 ## Development Roadmap
 
@@ -212,6 +213,7 @@ Unified Planner presents the planning views together
 - [x] Unified planner entry point
 - [x] User-entered effort overrides
 - [x] Duration-aware conflict detection
+- [x] Unified duration-aware planner output
 - [ ] Weekly planner main-command integration
 - [ ] User-configurable daily capacity
 - [ ] Exam tracker
@@ -228,8 +230,8 @@ Unified Planner presents the planning views together
 
 ## Immediate Next Step
 
-Safely integrate the planner commands and duration controls into the existing JARVIS command interface using small targeted changes. Then add user-configurable daily capacity so workload warnings reflect the student's real available study time.
+Safely integrate the planner and duration commands into the existing JARVIS command interface using small targeted changes. Then add user-configurable daily capacity so workload warnings reflect the student's real available study time.
 
 ## Current Status
 
-> **JARVIS v0.18 — Persistent Tasks, Assignments, Notes, One-Time & Recurring Schedule, Reminders, Unified Daily Agenda, Weekly Planner, Explainable Planner Insights, Effort-Aware Workload Planning, Unified Planner Entry Point, User-Entered Effort Estimates, and Duration-Aware Conflict Detection**
+> **JARVIS v0.19 — Persistent Tasks, Assignments, Notes, One-Time & Recurring Schedule, Reminders, Unified Daily Agenda, Weekly Planner, Explainable Planner Insights, Effort-Aware Workload Planning, Unified Planner Entry Point, User-Entered Effort Estimates, Duration-Aware Conflict Detection, and Unified Duration-Aware Planner Output**
