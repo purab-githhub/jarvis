@@ -3,7 +3,7 @@
 **Project:** JARVIS — Personal AI Student Assistant  
 **Repository:** `purab-githhub/jarvis`  
 **Report date:** 8 September 2026  
-**Current milestone:** v0.19 — Unified Duration-Aware Planner
+**Current milestone:** v0.20 — Verification & Reproducible Run Foundation
 
 ---
 
@@ -30,6 +30,7 @@ main.py ───────────── command interface
  ├── notes.py ──────── note management
  ├── schedule.py ───── one-time schedule management
  ├── recurring_schedule.py ─ weekly recurring schedule
+ ├── verify.py ─────── project compilation/import verification
  └── database.py ───── SQLite setup + effort override storage
              │
              ▼
@@ -38,6 +39,9 @@ main.py ───────────── command interface
 reminder_service.py
  ├── checks due tasks
  └── checks due assignments
+
+.github/workflows/verify.yml
+ └── automatically verifies the project on pushes/PRs to main
 ```
 
 ## Implemented Features
@@ -98,7 +102,7 @@ reminder_service.py
 - Standalone `effort.py` entry point
 
 ### Unified Planner Entry Point
-`planner.py` now combines all planner analysis into one workflow:
+`planner.py` combines:
 
 1. Weekly planner
 2. Planner insights
@@ -112,9 +116,7 @@ python planner.py
 ```
 
 ### User-Entered Effort Estimates
-JARVIS supports persistent effort overrides for individual planner items.
-
-Examples:
+Persistent effort overrides can be set for individual planner items:
 
 ```bash
 python duration.py task 3 60
@@ -123,27 +125,26 @@ python duration.py event 4 90
 python duration.py clear task 3
 ```
 
-The override is stored in the SQLite `effort_overrides` table and takes precedence over the heuristic estimate used by `effort_planner.py`. Clearing an override returns the item to the automatic heuristic estimate.
+Overrides take precedence over heuristic estimates.
 
 ### Duration-Aware Conflict Detection
-`duration_conflicts.py` treats each timed planner item as a time range using its estimated or user-entered duration.
+Timed planner items are converted into ranges using estimated or user-entered durations. Overlaps such as `07:00–08:30` and `08:00–09:00` are detected. Untimed items are skipped because their range cannot be inferred reliably.
 
-Instead of only detecting identical timestamps, JARVIS can detect overlaps such as:
-
-```text
-07:00–08:30  DSA Revision
-08:00–09:00  CN Study
-```
-
-The module reports the actual overlap window and the two conflicting planner items. Untimed items are ignored because there is no reliable start time from which to construct a range.
-
-Run it with:
+### Project Verification
+`verify.py` provides a repeatable local verification command:
 
 ```bash
-python duration_conflicts.py
+python verify.py
 ```
 
-The unified `planner.py` now includes this analysis automatically, so personal duration overrides affect both workload totals and overlap detection.
+It:
+
+1. Compiles the Python source tree.
+2. Initializes the SQLite database.
+3. Imports the major JARVIS modules without launching the interactive CLI.
+4. Reports PASS/FAIL results.
+
+A GitHub Actions workflow at `.github/workflows/verify.yml` runs this verification automatically on pushes and pull requests targeting `main`.
 
 ## Current Workflow
 
@@ -168,11 +169,13 @@ Effort Planner estimates workload
         ↓
 User duration overrides can replace heuristic estimates
         ↓
-Capacity warnings use the personalized effort values
+Capacity warnings use personalized effort values
         ↓
 Duration-aware conflict detection converts timed items into ranges
         ↓
-Unified Planner presents all planning analysis together
+Unified Planner presents planning analysis together
+        ↓
+verify.py / GitHub Actions verifies the codebase
 ```
 
 ## Current Limitations
@@ -184,9 +187,10 @@ Unified Planner presents all planning analysis together
 - Note creation is command-based rather than conversational or multi-line.
 - Search is basic keyword matching.
 - Weekly planner insights use simple rules rather than AI-based prioritization.
-- Duration-aware conflict detection depends on an explicit start time and estimated/user-entered duration; untimed items cannot be reliably checked for overlap.
+- Duration-aware conflict detection depends on an explicit start time and estimated/user-entered duration.
 - Daily capacity is currently a configurable fixed default of 240 minutes.
 - Direct `week`/`insights`/`effort`/`planner` integration into the existing `main.py` command loop remains pending.
+- Automated verification confirms compilation/imports; it does not replace full behavioral testing with realistic user data.
 
 ## Development Roadmap
 
@@ -214,6 +218,8 @@ Unified Planner presents all planning analysis together
 - [x] User-entered effort overrides
 - [x] Duration-aware conflict detection
 - [x] Unified duration-aware planner output
+- [x] Local project verification utility
+- [x] GitHub Actions verification workflow
 - [ ] Weekly planner main-command integration
 - [ ] User-configurable daily capacity
 - [ ] Exam tracker
@@ -230,8 +236,8 @@ Unified Planner presents all planning analysis together
 
 ## Immediate Next Step
 
-Safely integrate the planner and duration commands into the existing JARVIS command interface using small targeted changes. Then add user-configurable daily capacity so workload warnings reflect the student's real available study time.
+Pull the latest `main` branch in Codespaces and run `python verify.py` to confirm the environment is healthy. Then integrate the planner commands into the existing JARVIS CLI using small targeted changes, followed by user-configurable daily capacity and workload redistribution.
 
 ## Current Status
 
-> **JARVIS v0.19 — Persistent Tasks, Assignments, Notes, One-Time & Recurring Schedule, Reminders, Unified Daily Agenda, Weekly Planner, Explainable Planner Insights, Effort-Aware Workload Planning, Unified Planner Entry Point, User-Entered Effort Estimates, Duration-Aware Conflict Detection, and Unified Duration-Aware Planner Output**
+> **JARVIS v0.20 — Persistent Tasks, Assignments, Notes, One-Time & Recurring Schedule, Reminders, Daily Agenda, Weekly Planner, Explainable Planner Insights, Effort-Aware Workload Planning, Unified Planner, User-Entered Effort Estimates, Duration-Aware Conflict Detection, and Automated Project Verification**
