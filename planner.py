@@ -7,7 +7,7 @@ from weekly_planner import print_weekly_plan
 
 def run_planner():
     initialize_database()
-    print("\n========== JARVIS PLANNER v0.19 ==========")
+    print("\n========== JARVIS PLANNER v0.21 ==========")
     print_weekly_plan()
     print_planner_insights()
     print_effort_plan()
