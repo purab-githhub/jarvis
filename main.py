@@ -5,6 +5,13 @@ from agenda import get_daily_agenda
 from assignments import add_assignment, complete_assignment, view_assignments
 from database import initialize_database
 from notes import add_note, get_note, search_notes, view_notes
+from planner_commands import (
+    run_conflicts_command,
+    run_effort_command,
+    run_insights_command,
+    run_planner_command,
+    run_week_command,
+)
 from recurring_schedule import WEEKDAYS, add_recurring_event, complete_recurring_event, view_recurring_events
 from schedule import add_event, complete_event, get_today_events, view_events
 from tasks import add_task, complete_task, get_due_tasks, view_tasks
@@ -251,6 +258,11 @@ Available commands:
   pending
   reminders
   complete <id>
+  week                  Show the Monday-Sunday planner
+  insights              Show priorities and planning conflicts
+  effort                Show estimated workload and capacity
+  conflicts             Show duration-aware schedule conflicts
+  planner               Show the complete planning analysis
   help
   exit
 """)
@@ -259,7 +271,7 @@ Available commands:
 def run_jarvis():
     initialize_database()
     print("\n================================")
-    print("        JARVIS STUDENT v0.11")
+    print("        JARVIS STUDENT v0.21")
     print("================================")
     show_due_alerts()
     print("Type 'help' to see commands.\n")
@@ -376,6 +388,16 @@ def run_jarvis():
                 print("JARVIS: Use completeassignment <assignment_id>")
                 continue
             print(f"JARVIS: {'Assignment completed successfully.' if complete_assignment(int(parts[1])) else 'Assignment not found or already completed.'}")
+        elif action == "week":
+            run_week_command()
+        elif action == "insights":
+            run_insights_command()
+        elif action == "effort":
+            run_effort_command()
+        elif action == "conflicts":
+            run_conflicts_command()
+        elif action == "planner":
+            run_planner_command()
         elif action == "help":
             show_help()
         elif action in {"exit", "quit"}:
