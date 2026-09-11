@@ -2,6 +2,7 @@ from collections import defaultdict
 
 from database import get_connection
 from planner_insights import get_weekly_items
+from settings import get_daily_capacity
 
 
 DEFAULT_MINUTES = {
@@ -106,8 +107,10 @@ def get_daily_effort(target_date=None):
     return dict(totals)
 
 
-def get_effort_warnings(target_date=None, daily_capacity_minutes=240):
-    """Return days whose estimated work exceeds the configured daily capacity."""
+def get_effort_warnings(target_date=None, daily_capacity_minutes=None):
+    """Return days whose estimated work exceeds the user's daily capacity."""
+    if daily_capacity_minutes is None:
+        daily_capacity_minutes = get_daily_capacity()
     totals = get_daily_effort(target_date)
     return {
         day: minutes
@@ -116,7 +119,10 @@ def get_effort_warnings(target_date=None, daily_capacity_minutes=240):
     }
 
 
-def print_effort_plan(target_date=None, daily_capacity_minutes=240):
+def print_effort_plan(target_date=None, daily_capacity_minutes=None):
+    if daily_capacity_minutes is None:
+        daily_capacity_minutes = get_daily_capacity()
+
     items = get_effort_items(target_date)
     print("\n========== JARVIS EFFORT PLAN ==========")
     if not items:
