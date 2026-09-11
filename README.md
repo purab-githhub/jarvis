@@ -56,6 +56,13 @@ Run effort analysis:
 python effort.py
 ```
 
+View or change your daily planning capacity:
+
+```bash
+python capacity.py
+python capacity.py 300
+```
+
 Run duration-aware conflict detection:
 
 ```bash
@@ -84,6 +91,7 @@ GitHub Actions also runs the same verification automatically on pushes and pull 
 - Daily and weekly planning
 - Priority and conflict analysis
 - Effort estimation and user-entered duration overrides
+- Persistent user-configurable daily planning capacity
 - Duration-aware scheduling conflict detection
 - Desktop reminder-service foundation
 
