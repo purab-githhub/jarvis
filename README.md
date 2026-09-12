@@ -69,6 +69,12 @@ Run duration-aware conflict detection:
 python duration_conflicts.py
 ```
 
+Preview safe workload redistribution recommendations:
+
+```bash
+python optimize.py
+```
+
 Run the reminder service:
 
 ```bash
@@ -93,6 +99,7 @@ GitHub Actions also runs the same verification automatically on pushes and pull 
 - Effort estimation and user-entered duration overrides
 - Persistent user-configurable daily planning capacity
 - Duration-aware scheduling conflict detection
+- Recommendation-only workload redistribution across lighter days
 - Desktop reminder-service foundation
 
 See [`JARVIS_DEVELOPMENT_REPORT.md`](JARVIS_DEVELOPMENT_REPORT.md) for the complete development history and roadmap.
