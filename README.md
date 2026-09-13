@@ -75,6 +75,15 @@ Preview safe workload redistribution recommendations:
 python optimize.py
 ```
 
+Explicitly approve a date move for a pending task or assignment:
+
+```bash
+python reschedule.py task 3 2026-09-15
+python reschedule.py assignment 2 2026-09-16
+```
+
+These commands change only the selected pending item's due date and preserve its existing due time. The optimizer never performs these changes automatically.
+
 Run the reminder service:
 
 ```bash
@@ -83,7 +92,7 @@ python reminder_service.py
 
 ## Project verification
 
-`verify.py` compiles the Python source, initializes the SQLite database, and imports the major JARVIS modules without starting the interactive command loop.
+`verify.py` compiles the Python source, initializes the SQLite database, and imports the major JARVIS modules without starting the interactive command loop. It now also covers the settings, optimizer, command bridge, and explicit rescheduling modules.
 
 GitHub Actions also runs the same verification automatically on pushes and pull requests targeting `main`.
 
@@ -100,6 +109,7 @@ GitHub Actions also runs the same verification automatically on pushes and pull 
 - Persistent user-configurable daily planning capacity
 - Duration-aware scheduling conflict detection
 - Recommendation-only workload redistribution across lighter days
+- Explicit approval-based rescheduling for pending tasks and assignments
 - Desktop reminder-service foundation
 
 See [`JARVIS_DEVELOPMENT_REPORT.md`](JARVIS_DEVELOPMENT_REPORT.md) for the complete development history and roadmap.
