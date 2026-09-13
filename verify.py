@@ -25,6 +25,10 @@ MODULES = [
     "planner_insights",
     "effort_planner",
     "duration_conflicts",
+    "workload_optimizer",
+    "settings",
+    "planner_commands",
+    "reschedule",
     "planner",
     "reminder_service",
 ]
