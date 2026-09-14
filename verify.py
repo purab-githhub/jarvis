@@ -29,6 +29,7 @@ MODULES = [
     "settings",
     "planner_commands",
     "reschedule",
+    "optimize_and_reschedule",
     "planner",
     "reminder_service",
 ]
