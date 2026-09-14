@@ -75,14 +75,22 @@ Preview safe workload redistribution recommendations:
 python optimize.py
 ```
 
-Explicitly approve a date move for a pending task or assignment:
+Run the approval workflow for recommended moves:
+
+```bash
+python optimize_and_reschedule.py
+```
+
+The approval workflow shows each proposed move and asks for explicit `y` confirmation. Only approved pending tasks or assignments are rescheduled, and their existing due times are preserved. The optimizer itself never changes data automatically.
+
+For a direct, one-item move without the recommendation workflow:
 
 ```bash
 python reschedule.py task 3 2026-09-15
 python reschedule.py assignment 2 2026-09-16
 ```
 
-These commands change only the selected pending item's due date and preserve its existing due time. The optimizer never performs these changes automatically.
+These commands change only the selected pending item's due date and preserve its existing due time.
 
 Run the reminder service:
 
@@ -92,7 +100,7 @@ python reminder_service.py
 
 ## Project verification
 
-`verify.py` compiles the Python source, initializes the SQLite database, and imports the major JARVIS modules without starting the interactive command loop. It now also covers the settings, optimizer, command bridge, and explicit rescheduling modules.
+`verify.py` compiles the Python source, initializes the SQLite database, and imports the major JARVIS modules without starting the interactive command loop. It covers the settings, optimizer, command bridge, explicit rescheduling, and approval workflow modules.
 
 GitHub Actions also runs the same verification automatically on pushes and pull requests targeting `main`.
 
@@ -110,6 +118,7 @@ GitHub Actions also runs the same verification automatically on pushes and pull 
 - Duration-aware scheduling conflict detection
 - Recommendation-only workload redistribution across lighter days
 - Explicit approval-based rescheduling for pending tasks and assignments
+- Interactive approval workflow for optimizer recommendations
 - Desktop reminder-service foundation
 
 See [`JARVIS_DEVELOPMENT_REPORT.md`](JARVIS_DEVELOPMENT_REPORT.md) for the complete development history and roadmap.
