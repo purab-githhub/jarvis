@@ -5,10 +5,12 @@ from agenda import get_daily_agenda
 from assignments import add_assignment, complete_assignment, view_assignments
 from database import initialize_database
 from notes import add_note, get_note, search_notes, view_notes
+from optimize_and_reschedule import run_approval_workflow
 from planner_commands import (
     run_conflicts_command,
     run_effort_command,
     run_insights_command,
+    run_optimize_command,
     run_planner_command,
     run_week_command,
 )
@@ -262,6 +264,8 @@ Available commands:
   insights              Show priorities and planning conflicts
   effort                Show estimated workload and capacity
   conflicts             Show duration-aware schedule conflicts
+  optimize              Show safe workload redistribution suggestions
+  reschedule            Review and approve suggested date changes
   planner               Show the complete planning analysis
   help
   exit
@@ -271,7 +275,7 @@ Available commands:
 def run_jarvis():
     initialize_database()
     print("\n================================")
-    print("        JARVIS STUDENT v0.21")
+    print("        JARVIS STUDENT v0.23")
     print("================================")
     show_due_alerts()
     print("Type 'help' to see commands.\n")
@@ -396,6 +400,14 @@ def run_jarvis():
             run_effort_command()
         elif action == "conflicts":
             run_conflicts_command()
+        elif action == "optimize":
+            run_optimize_command()
+        elif action == "reschedule":
+            applied = run_approval_workflow()
+            if applied:
+                print("\nJARVIS: Re-checking the plan after approved changes...")
+                run_effort_command()
+                run_conflicts_command()
         elif action == "planner":
             run_planner_command()
         elif action == "help":
