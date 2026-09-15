@@ -34,7 +34,7 @@ def run_optimize_command():
 
 def run_planner_command():
     """Print the complete planning analysis in one place."""
-    print("\n========== JARVIS PLANNER v0.22 ==========")
+    print("\n========== JARVIS PLANNER v0.23 ==========")
     run_week_command()
     run_insights_command()
     run_effort_command()
